@@ -81,13 +81,18 @@ func cloneAggregate(in *domain.ProjectAggregate) (*domain.ProjectAggregate, erro
 }
 
 func cloneDatabase(in database) (database, error) {
-	b, err := json.Marshal(in)
-	if err != nil {
-		return database{}, err
+	out := database{
+		SchemaVersion: in.SchemaVersion,
+		Projects:      make(map[string]*domain.ProjectAggregate, len(in.Projects)),
+		Idempotency:   make(map[string]domain.IdempotencyRecord, len(in.Idempotency)),
+		AuditSequence: in.AuditSequence,
+		AuditDigest:   in.AuditDigest,
 	}
-	var out database
-	if err := json.Unmarshal(b, &out); err != nil {
-		return database{}, err
+	for id, aggregate := range in.Projects {
+		out.Projects[id] = aggregate
+	}
+	for key, record := range in.Idempotency {
+		out.Idempotency[key] = record
 	}
 	return out, nil
 }
