@@ -21,7 +21,7 @@ func (s *Server) ReviewHandler(w http.ResponseWriter, r *http.Request, projectID
 	if !decodeJSON(w, r, &body) {
 		return
 	}
-	agg, err := s.workflow.Review(workflow.ReviewCommand{ProjectID: projectID, ExpectedVersion: body.ExpectedVersion, Reviewer: body.Reviewer, LanguageApproved: body.LanguageApproved, AccessibilityApproved: body.AccessibilityApproved, Decision: body.Decision, Reason: body.Reason, IdempotencyKey: body.IdempotencyKey})
+	agg, err := s.workflow.ReviewWithContext(r.Context(), workflow.ReviewCommand{ProjectID: projectID, ExpectedVersion: body.ExpectedVersion, Reviewer: body.Reviewer, LanguageApproved: body.LanguageApproved, AccessibilityApproved: body.AccessibilityApproved, Decision: body.Decision, Reason: body.Reason, IdempotencyKey: body.IdempotencyKey})
 	if err != nil {
 		writeDomainError(w, err)
 		return

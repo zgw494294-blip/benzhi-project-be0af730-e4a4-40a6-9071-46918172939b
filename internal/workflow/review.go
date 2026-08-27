@@ -1,8 +1,17 @@
 package workflow
 
 import (
+	"context"
+
 	"subtitle-review/internal/domain"
 )
+
+func (s *Service) ReviewWithContext(ctx context.Context, cmd ReviewCommand) (*domain.ProjectAggregate, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return s.Review(cmd)
+}
 
 func (s *Service) Review(cmd ReviewCommand) (*domain.ProjectAggregate, error) {
 	who, err := actor(cmd.Reviewer, "reviewer")
