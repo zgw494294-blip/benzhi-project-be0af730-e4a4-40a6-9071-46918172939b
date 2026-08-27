@@ -58,6 +58,9 @@ func (s *Service) VerifyCredential(code string) (*Verification, error) {
 	if code == "" || !credentialInputPattern.MatchString(code) {
 		return nil, domain.FieldError("code", "凭据编号或验证码格式无效")
 	}
+	if cached, ok := s.cachedVerification(code); ok {
+		return cached, nil
+	}
 	agg, err := s.store.FindCredential(code)
 	if err != nil {
 		return nil, err
@@ -108,7 +111,9 @@ func (s *Service) VerifyCredential(code string) (*Verification, error) {
 	if !valid {
 		message = "凭据核验存在不一致项"
 	}
-	return &Verification{Valid: valid, Message: message, Checks: checks, Credential: *agg.Credential, Manifest: *agg.Manifest, Timeline: agg.Timeline}, nil
+	result := &Verification{Valid: valid, Message: message, Checks: checks, Credential: *agg.Credential, Manifest: *agg.Manifest, Timeline: agg.Timeline}
+	s.rememberVerification(code, result)
+	return result, nil
 }
 
 func errorMessage(err error, fallback string) string {
