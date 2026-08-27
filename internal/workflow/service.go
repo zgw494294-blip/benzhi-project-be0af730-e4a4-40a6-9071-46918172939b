@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"strings"
+	"sync"
 	"time"
 
 	"subtitle-review/internal/caption"
@@ -14,17 +15,19 @@ import (
 type Clock func() time.Time
 
 type Service struct {
-	store     *store.FileStore
-	validator *caption.Validator
-	now       Clock
+	store          *store.FileStore
+	validator      *caption.Validator
+	now            Clock
+	readinessMu    sync.RWMutex
+	readinessCache map[string]*FreezeReadiness
 }
 
 func NewService(repo *store.FileStore) *Service {
-	return &Service{store: repo, validator: caption.NewValidator(), now: time.Now}
+	return &Service{store: repo, validator: caption.NewValidator(), now: time.Now, readinessCache: make(map[string]*FreezeReadiness)}
 }
 
 func NewServiceWithClock(repo *store.FileStore, clock Clock) *Service {
-	return &Service{store: repo, validator: caption.NewValidator(), now: clock}
+	return &Service{store: repo, validator: caption.NewValidator(), now: clock, readinessCache: make(map[string]*FreezeReadiness)}
 }
 
 func (s *Service) Store() *store.FileStore { return s.store }

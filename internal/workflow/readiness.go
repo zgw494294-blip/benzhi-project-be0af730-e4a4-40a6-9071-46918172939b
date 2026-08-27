@@ -6,6 +6,12 @@ import (
 )
 
 func (s *Service) FreezeReadiness(projectID string, expectedVersion int64) (*FreezeReadiness, error) {
+	s.readinessMu.RLock()
+	cached := s.readinessCache[projectID]
+	s.readinessMu.RUnlock()
+	if cached != nil {
+		return cached, nil
+	}
 	agg, err := s.store.GetProject(projectID)
 	if err != nil {
 		return nil, err
@@ -13,7 +19,16 @@ func (s *Service) FreezeReadiness(projectID string, expectedVersion int64) (*Fre
 	if err := ensureVersion(agg, expectedVersion); err != nil {
 		return nil, err
 	}
-	return evaluateFreezeReadiness(agg)
+	result, err := evaluateFreezeReadiness(agg)
+	if err != nil {
+		return nil, err
+	}
+	if result.Ready {
+		s.readinessMu.Lock()
+		s.readinessCache[projectID] = result
+		s.readinessMu.Unlock()
+	}
+	return result, nil
 }
 
 func evaluateFreezeReadiness(agg *domain.ProjectAggregate) (*FreezeReadiness, error) {
