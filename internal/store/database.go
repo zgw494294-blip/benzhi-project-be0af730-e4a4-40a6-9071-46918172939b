@@ -69,13 +69,19 @@ func (s *FileStore) load() error {
 func (s *FileStore) Close() error { return nil }
 
 func cloneAggregate(in *domain.ProjectAggregate) (*domain.ProjectAggregate, error) {
-	b, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
+	out := *in
+	out.Revisions = append([]domain.CaptionRevision(nil), in.Revisions...)
+	out.Issues = append([]domain.ValidationIssue(nil), in.Issues...)
+	out.Decisions = append([]domain.ReviewDecision(nil), in.Decisions...)
+	out.Timeline = append([]domain.AuditEvent(nil), in.Timeline...)
+	if in.Manifest != nil {
+		manifest := *in.Manifest
+		manifest.Cues = append([]domain.CaptionCue(nil), in.Manifest.Cues...)
+		out.Manifest = &manifest
 	}
-	var out domain.ProjectAggregate
-	if err := json.Unmarshal(b, &out); err != nil {
-		return nil, err
+	if in.Credential != nil {
+		credential := *in.Credential
+		out.Credential = &credential
 	}
 	return &out, nil
 }
