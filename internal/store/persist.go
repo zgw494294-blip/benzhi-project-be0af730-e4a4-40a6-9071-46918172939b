@@ -35,13 +35,13 @@ func (s *FileStore) commit(next database, event domain.AuditEvent) error {
 	if err = tmp.Close(); err != nil {
 		return err
 	}
+	if err = appendAudit(s.auditPath, event); err != nil {
+		return err
+	}
 	if err = os.Rename(tmpName, s.snapshotPath); err != nil {
 		return err
 	}
 	if err = syncDirectory(s.dir); err != nil {
-		return err
-	}
-	if err = appendAudit(s.auditPath, event); err != nil {
 		return err
 	}
 	s.db = next
