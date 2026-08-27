@@ -37,21 +37,26 @@ func (s *FileStore) CreateProject(project *domain.CaptionProject, actor, idempot
 
 func (s *FileStore) Mutate(projectID string, expectedVersion int64, actor, operation, idempotencyKey, requestDigest string, now time.Time, fn Mutation) (domain.CommandResult, error) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	if result, found, err := s.checkIdempotency(idempotencyKey, operation, requestDigest); found || err != nil {
+		s.mu.Unlock()
 		return result, err
 	}
 	current, ok := s.db.Projects[projectID]
 	if !ok {
+		s.mu.Unlock()
 		return domain.CommandResult{}, domain.NewError(domain.CodeNotFound, "字幕项目不存在")
 	}
 	if current.Project.Version != expectedVersion {
+		s.mu.Unlock()
 		return domain.CommandResult{}, domain.NewError(domain.CodeStaleVersion, fmt.Sprintf("版本已更新，当前版本为 %d", current.Project.Version))
 	}
 	next, err := cloneDatabase(s.db)
 	if err != nil {
+		s.mu.Unlock()
 		return domain.CommandResult{}, err
 	}
+	s.mu.Unlock()
+
 	agg := next.Projects[projectID]
 	result, eventType, details, err := fn(agg)
 	if err != nil {
@@ -63,6 +68,9 @@ func (s *FileStore) Mutate(projectID string, expectedVersion int64, actor, opera
 	event := s.makeEvent(&next, projectID, eventType, actor, now, agg.Project.Version, details)
 	agg.Timeline = append(agg.Timeline, event)
 	addIdempotency(&next, idempotencyKey, operation, requestDigest, result, now)
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := s.commit(next, event); err != nil {
 		return domain.CommandResult{}, err
 	}
