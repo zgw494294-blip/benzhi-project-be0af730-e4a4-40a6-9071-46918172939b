@@ -8,12 +8,14 @@ import (
 	"subtitle-review/internal/domain"
 )
 
-type Validator struct{}
+type Validator struct {
+	issues []domain.ValidationIssue
+}
 
 func NewValidator() *Validator { return &Validator{} }
 
 func (v *Validator) Validate(revisionID string, cues []domain.CaptionCue, rules domain.ProjectRules) []domain.ValidationIssue {
-	issues := make([]domain.ValidationIssue, 0)
+	issues := v.issues[:0]
 	for i, cue := range cues {
 		if cue.StartMillis < 0 || cue.EndMillis <= cue.StartMillis || cue.EndMillis > rules.DurationMillis {
 			issues = append(issues, issue(revisionID, cue.CueID, domain.IssueOutOfBounds, "字幕时间码超出节目范围或区间无效"))
@@ -35,6 +37,7 @@ func (v *Validator) Validate(revisionID string, cues []domain.CaptionCue, rules 
 			issues = append(issues, issue(revisionID, cue.CueID, domain.IssueReadingSpeed, fmt.Sprintf("阅读速度 %.1f 字/秒超过阈值 %.1f", speed, rules.MaxCharsPerSecond)))
 		}
 	}
+	v.issues = issues
 	return issues
 }
 
