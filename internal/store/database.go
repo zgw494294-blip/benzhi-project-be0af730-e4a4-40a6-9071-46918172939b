@@ -22,6 +22,7 @@ type FileStore struct {
 	dir          string
 	snapshotPath string
 	auditPath    string
+	auditFile    *os.File
 	db           database
 }
 
@@ -66,7 +67,16 @@ func (s *FileStore) load() error {
 	return validateDatabase(s.db)
 }
 
-func (s *FileStore) Close() error { return nil }
+func (s *FileStore) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.auditFile == nil {
+		return nil
+	}
+	err := s.auditFile.Close()
+	s.auditFile = nil
+	return err
+}
 
 func cloneAggregate(in *domain.ProjectAggregate) (*domain.ProjectAggregate, error) {
 	b, err := json.Marshal(in)

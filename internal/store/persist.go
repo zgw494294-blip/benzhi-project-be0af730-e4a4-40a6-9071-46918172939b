@@ -41,30 +41,32 @@ func (s *FileStore) commit(next database, event domain.AuditEvent) error {
 	if err = syncDirectory(s.dir); err != nil {
 		return err
 	}
-	if err = appendAudit(s.auditPath, event); err != nil {
+	if err = s.appendAudit(event); err != nil {
 		return err
 	}
 	s.db = next
 	return nil
 }
 
-func appendAudit(path string, event domain.AuditEvent) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o640)
-	if err != nil {
-		return err
+func (s *FileStore) appendAudit(event domain.AuditEvent) error {
+	if s.auditFile == nil {
+		f, err := os.OpenFile(s.auditPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o640)
+		if err != nil {
+			return err
+		}
+		s.auditFile = f
 	}
 	b, err := json.Marshal(event)
 	if err == nil {
-		_, err = f.Write(append(b, '\n'))
+		_, err = s.auditFile.Write(append(b, '\n'))
 	}
 	if err == nil {
-		err = f.Sync()
+		err = s.auditFile.Sync()
 	}
-	closeErr := f.Close()
 	if err != nil {
 		return err
 	}
-	return closeErr
+	return nil
 }
 
 func syncDirectory(path string) error {
@@ -117,7 +119,7 @@ func (s *FileStore) reconcileAudit() error {
 		if e.PreviousDigest != previous {
 			return domain.NewError(domain.CodeIntegrity, "补偿审计事件摘要链不一致")
 		}
-		if err := appendAudit(s.auditPath, e); err != nil {
+		if err := s.appendAudit(e); err != nil {
 			return err
 		}
 		previous = e.Digest
