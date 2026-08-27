@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>字幕交付校审台</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/enhancements.css">
+</head>
+<body>
+  <header class="topbar">
+    <div><span class="brand-mark">CC</span><strong>字幕交付校审台</strong></div>
+    <div class="top-actions">
+      <form id="credential-search" class="credential-search"><label class="sr-only" for="credential-code">凭据编号或验证码</label><input id="credential-code" name="code" placeholder="凭据编号或验证码" required><button type="submit">核验</button></form>
+      <span id="connection" class="status-dot">服务就绪</span><button class="icon-btn" id="refresh" title="刷新项目" aria-label="刷新项目">↻</button>
+    </div>
+  </header>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="side-title"><span>交付项目</span><button id="new-project" class="icon-btn" title="新建项目" aria-label="新建项目">＋</button></div>
+      <form id="queue-filter" class="queue-filter"><input name="q" placeholder="节目名称或项目编号"><div class="filter-row"><select name="status"><option value="">全部状态</option><option value="draft">草稿</option><option value="fixing">待整改</option><option value="review">待复核</option><option value="approved">已批准</option><option value="frozen">已冻结</option></select><input name="language" placeholder="语言"></div><button type="submit" class="secondary">筛选</button></form>
+      <div id="queue-summary" class="queue-summary"></div>
+      <div id="project-list" class="project-list"></div>
+    </aside>
+    <main>
+      <section id="empty" class="empty-state"><div class="empty-glyph">字幕</div><h1>选择或建立交付项目</h1></section>
+      <section id="workspace" hidden>
+        <div class="project-head">
+          <div><p class="eyebrow" id="project-id"></p><h1 id="project-title"></h1></div>
+          <div class="state-block"><span id="project-status" class="state"></span><span id="project-version"></span></div>
+        </div>
+        <div id="progress" class="progress" aria-label="交付进度"></div>
+        <nav class="tabs" aria-label="项目视图">
+          <button data-tab="timeline" class="active">字幕时间轴</button>
+          <button data-tab="issues">问题整改 <span id="issue-count"></span></button>
+          <button data-tab="review">人工复核</button>
+          <button data-tab="delivery">冻结与凭据</button>
+          <button data-tab="history">状态时间线</button>
+        </nav>
+        <div id="tab-timeline" class="tab-pane"></div>
+        <div id="tab-issues" class="tab-pane" hidden></div>
+        <div id="tab-review" class="tab-pane" hidden></div>
+        <div id="tab-delivery" class="tab-pane" hidden></div>
+        <div id="tab-history" class="tab-pane" hidden></div>
+      </section>
+    </main>
+  </div>
+  <dialog id="project-dialog">
+    <form id="project-form"><div class="dialog-head"><h2>建立字幕交付项目</h2><button type="button" class="icon-btn close" aria-label="关闭">×</button></div>
+      <div class="form-grid"><label>节目名称<input name="title" required></label><label>节目时长（毫秒）<input name="durationMillis" type="number" min="1" value="60000" required></label><label>语言<input name="language" value="zh-CN" required></label><label>帧率<input name="frameRate" type="number" step="0.01" value="25" required></label><label>最大阅读速度（字/秒）<input name="maxCharsPerSecond" type="number" step="0.1" value="15" required></label><label>交付规范<input name="deliveryStandard" value="公共文化无障碍字幕规范" required></label><label>建档人<input name="actor" value="字幕编辑" required></label></div>
+      <div class="dialog-actions"><button type="button" class="secondary close">取消</button><button type="submit">建立项目</button></div>
+    </form>
+  </dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
